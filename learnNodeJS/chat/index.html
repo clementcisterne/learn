@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8" />
     <title>Super Chat temps réel !</title>
     <style>
         #zone_chat strong {
             color: white;
             background-color: black;
             padding: 2px;
+            text-transform: none;
+            text-decoration: none;
         }
     </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 </head>
 
 
@@ -17,15 +20,18 @@
 <h1>Le super Chat temps réel !</h1>
 
 <form action="/" method="post" id="formulaire_chat">
-    <input type="text" name="message" id="message" placeholder="Votre message..." size="50" autofocus />
+    <input type="message" name="message" id="message" placeholder="Votre message..." size="50" autofocus />
     <input type="submit" id="envoi_message" value="Envoyer" />
 </form>
+<button id="leaveChat">Quitter</button>
 
 <section id="zone_chat">
 
 
-</section>
+</section>  
 
+<!-- Script -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -44,8 +50,13 @@
     })
 
     // Quand un nouveau client se connecte, on affiche l'information
-    socket.on('nouveau_client', function(pseudo) {
-        $('#zone_chat').prepend('<p><em>' + pseudo + ' a rejoint le Chat !</em></p>');
+    socket.on('nouveau_client', function() {
+        $('#zone_chat').prepend('<p><em>' + pseudo + '</em> join the Chat </p>');
+    })
+
+    // gestion des gens qui quittent le chat
+    socket.on('leave', function(){
+        $('#zone_chat').prepend('<p><em>' + pseudo + '</em> leaved the chat</p>');
     })
 
     // Lorsqu'on envoie le formulaire, on transmet le message et on l'affiche sur la page
@@ -57,11 +68,19 @@
         return false; // Permet de bloquer l'envoi "classique" du formulaire
     });
 
+    $('#leaveChat').click(function(){
+        confirm('Voulez vous vraiment quitter le chat ?');
+        socket.emit('leave', pseudo);
+
+
+
+    });
 
     // Ajoute un message dans la page
     function insereMessage(pseudo, message) {
         $('#zone_chat').prepend('<p><strong>' + pseudo + '</strong> ' + message + '</p>');
     }
+
 </script>
 </body>
 </html>
