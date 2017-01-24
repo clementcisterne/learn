@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Bienvenue</title>
+</head>
+<body>
+	<h3>Bienvenue</h3>
+
+
+	<p>Accèdez à l'application <a id="scriptOpenWindow">mytodo</a> !</p>
+
+	Assurez-vous d'avoir :
+	<ul>
+		<li> installé npm dans le repertoire mytodo</li>
+		<li></li>
+	</ul>
+
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script type="text/javascript">
+        var pseudo = prompt('Quel est votre pseudo ?');
+        socket.emit('nouveau_client', pseudo);
+        document.title = pseudo + ' - ' + document.title;
+
+		$('#scriptOpenWindow').click(function(){
+			window.open('/todo');
+		});
+
+	</script>
+</body>
+</html>
