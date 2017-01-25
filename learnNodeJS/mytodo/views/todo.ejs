@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>mytodo</title>
+    <style>
+        a {text-decoration: none; color: black;}
+    </style>
+</head>
+
+<body>
+    <h1>Manage todo's </h1>
+
+    <form action="/todo/ajouter" method="post" id="formTache">
+        <p>
+            <input type="text" name="newtodo" id="newtodo" placeholder="What shall I do ?" autofocus />
+            <input type="submit" value="Add" />
+        </p>
+    </form>
+    <button class="btnViderLesTaches">Empty</button>
+    <button id="leaveApp">Leave</button>
+    <br/>
+    <ul id="zoneTache">
+    <% todolist.forEach(function(todo, index) { %>
+        <li id="<%= index %>" class="tache"><button href="todo/supprimer/<%= index %>" class="deleteTache" >✘</button>  <%= todo %></li>
+    <% }); %>
+    </ul>
+
+    
+
+
+    <div>
+        <h4> Customers online <% nombreClientEnLigne %></h4>
+        <ul id="zoneInfoClients">
+        
+        </ul>
+    </div>
+
+    <% if(idClient != '') {%>
+        <script type="text/javascript">
+            var pseudo = prompt('Quel est votre pseudo ?');
+            socket.emit('nouveau_client', pseudo);
+            document.title = pseudo + ' - ' + document.title;
+
+        </script>
+    <% } else { %>
+
+    <% } %>
+
+    <script type="text/javascript">
+
+        // Connexion
+        var socket = io.connect('http://localhost:8080');
+
+
+
+
+
+        // écoute --------------------------------------------------------------------
+        
+        // Quand un nouveau client se connecte, on affiche l'information
+        socket.on('nouveau_client', function(data) {
+            $('#zoneInfoClients').prepend('<li id="'+data.idClient+'"">' + data.pseudo + '</li>');
+        })
+
+        // Quand un client ajoute une tache, on affiche l'information
+        socket.on('addTache', function(idTache, newtodo){
+            $('#zoneTache').prepend('<li id="'+ idTache +'" class="tache"><button class="deleteTache" >✘</button> '+ newtodo +'</li>');
+        });
+
+        // 
+        socket.on('deleteTache', function(idTache){
+            $('#zoneTache.' + idTache ).remove();
+        });            
+
+        socket.on('leave', function(idClient){
+            $('#zoneInfoClients.' + idClient ).remove();
+        });  
+
+
+        // emission ------------------------------------------------------------------
+
+        // Ajout d'une tache
+        $('#formTache').submit(function(){
+            var nombreTache = $('#zoneTache').lenght();
+            var idTache = nombreTache+1;
+            var newtodo = $('#newtodo').val();
+            socket.emit('addTache', newtodo, idTache);
+            insererTache(newtodo);
+        });
+
+        // Suppression d'une tache
+        $('.deleteTache').click(function(){
+            var idtache = this.parentNode.id;
+            var nomtache = this.parentNode.html;
+            confirm('Voulez vous vraiment supprimer la tâche '+ nomtache +' ?');
+            socket.emit('deleteTache', idtache);
+        });
+
+        // Vides la todolist
+        $('.btnViderLesTaches').click(function(){
+            
+        });
+
+        // Quitter l'application
+        $('#leaveApp').click(function(pseudo){
+            confirm('Do you really want to leave ? :\'(');
+            socket.emit('leaveApp', idClient);  
+            fermer();
+        });
+
+
+
+
+
+
+        // function insereTache(pseudo, tache){
+        //     var nombreTache = $('.tache').lenght();
+        //     $('#zoneTache').pretend('<li class="tache"><button class="deleteTache" >✘</button>' + pseudo + ' : ' + tache + '</li>');
+        //     $('#zoneTache').lastChild().id = nombreTache;
+        // }
+
+        function viderLesTaches(){
+            $('#zoneTache').empty();
+        }
+
+        function fermer(){
+            window.close();
+        } 
+
+    </script>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script> 
+    <script src="/socket.io/socket.io.js"></script>
+</body>
+</html>
