@@ -141,5 +141,24 @@ AngularJS
 
 		- $scope
 
+			Appuyons-nous sur le code suivant :
+
+				HTML :
+				
+				<div ng-app="app">
+				    <div ng-controller="exempleCtrl">
+				       HELLO {{name}}!
+				    </div>
+				</div>
 
 
+				JS :
+
+				var app = angular.module("app", []);
+
+				app.controller("exempleCtrl", function($scope) {
+				    $scope.name = "World"
+				});
+
+
+			Comme vous pouvez le constater, $scope constitue
