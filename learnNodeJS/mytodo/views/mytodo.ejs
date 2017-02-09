@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>mytodo</title>
+    <style>
+        a {text-decoration: none; color: black;}
+    </style>
+</head>
+
+<body>
+
+    <h1>Bienvenue sur mytodo </h1>
+
+
+    <h2>Gérer vos tâches <button id="leaveApp">Déconnexion</button></h2>
+
+    <div>
+        
+        <form style="display: inline-block;" action="/mytodo/ajouter" method="post" id="formTache">
+            <p>
+                <input type="text" name="newtodo" id="newtodo" placeholder="Ajoutez une tâche" autofocus />
+                <input type="submit" value="Add" />
+            </p>
+        </form>
+        <button class="btnViderLesTaches">vider</button>
+        <a href="Javascript:window.location.reload();">recharger</a>
+        
+    </div>
+
+    <ul id="zoneTache">
+    <% todolist.forEach(function(todo, index) { %>
+        <li id="<%= index %>" class="tache"><a href="/mytodo/supprimer/<%= index %>">✘</a>  <%= todo %></li>
+    <% }); %>
+    </ul>
+
+    
+
+
+    <div>
+        <h4> Clients en ligne <%= clients.length; %></h4>
+        <ul id="zoneInfoClients">
+            <% clients.forEach(function(pseudo, index) { %>
+                <li><%= pseudo %></li>
+            <% }); %>
+        </ul>   
+    </div>
+
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script> 
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript">
+        
+        // Connexion
+        var socket = io.connect('http://localhost:8080');
+
+
+        if(pseudo == 'undifined'){
+        }
+        var pseudo = window.location.href.substring(window.location.href.lastIndexOf( "/" )+1);
+        $('h1').append(pseudo);
+        document.title = pseudo + ' - ' + document.title;
+
+
+    // écoute --------------------------------------------------------------------    
+        // On reload la page quand un utilisateur se connecte, se deconnecte, ajoute ou supprime une tache
+        socket.on('reload', function(){
+            reload(pseudo);
+        });
+
+        socket.on('erreur', function(message){
+            alert(message);
+        });
+
+
+    // emission ------------------------------------------------------------------
+        // Ajout d'une tache
+        $('#formTache').submit(function(){
+            socket.emit('addTache', pseudo);
+        });
+
+        // Suppression d'une tache
+        $('.deleteTache').click(function(){
+            var idtache = this.parentNode.id;
+            var nomtache = this.parentNode.html;
+            var confirm = confirm('Voulez vous vraiment supprimer la tâche '+ idtache +' ?');
+            if(confirm){
+                socket.emit('deleteTache', pseudo);
+                redirect('/mytodo/supprimer/'+nomtache);
+            } else {
+                reload();
+            }
+        });
+
+        // Vides la todolist
+        $('.btnViderLesTaches').click(function(){
+            
+        });
+
+        // Quitter l'application
+        $('#leaveApp').click(function(pseudo){
+            confirm('Voulez vous vraiment quitter mytodo ? :\'(');
+            socket.emit('leaveApp', pseudo);  
+            fermer();
+        });
+
+
+
+    // some functions 
+        function viderLesTaches(){
+            //$('#zoneTache').empty();
+        }
+
+        function fermer(){
+            window.close();
+        } 
+
+        function reload(pseudo){
+            redirect('/mytodo/'+pseudo);
+        }
+
+
+
+
+
+    </script>
+</body>
+</html>

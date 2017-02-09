@@ -9,46 +9,85 @@ var bodyParser = require('body-parser'); // Charge le middleware de gestion des 
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 var nombreClientEnLigne = 0;
-var clients = [];
+var clients = ['lamouche'];
 
 
 
 // Gestion de la connexion
-io.sockets.on('connection', function (socket, pseudo) {
+io.sockets.on('connection', function (socket) {
+    
+
+/*if(socket.pseudo != 'undefined'){
+    console.log('undefined connection');
+} else {
+    console.log('authentificated connection');
+}*/
     
     
     /* On utilise les sessions */
     app.use(session({secret: 'todotopsecret'}))
 
 // Gestion des routes
-    // Si il n'y a aucune lsite de tache on en crée une vide
+    // Si il n'y a aucune liste de tache on en crée une vide
     .use(function(req, res, next){
         if (typeof(req.session.todolist) == 'undefined') {
             req.session.todolist = [];
-        }
+        } else if(typeof(req.session.clients) == 'undefined') {
+            req.session.clients = [];
+        } 
         next();
     })
 
-    .get('/', function(req, res){
-        res.render('../index.ejs');
-    })
 
-    .get('/todo', function(req,res){
-        res.render('todo.ejs', {todolist: req.session.todolist, idClient: nombreClientEnLigne+1, nombreClientEnLigne: nombreClientEnLigne});
-    })
-
-    .post('/todo/ajouter', urlencodedParser, function(req,res){
-        if(req.params.id != ''){
-            req.session.todolist.push(req.body.newtodo);
+    .get('/mytodo/:pseudo', function(req, res, next){
+        if(req.params.pseudo != ''){
+            if(clients.indexOf(req.params.pseudo) != -1){
+                req.session.clients = clients;
+                res.render('mytodo.ejs', {todolist: req.session.todolist, nombreClientEnLigne: nombreClientEnLigne, pseudo: req.params.pseudo, clients: req.session.clients});
+            
+                console.log(req.params.pseudo + " is connected");
+                console.log('customers online: '+clients.length);
+                console.log(clients);
+            } else {
+                socket.emit('erreur', {message: 'Vous devez vous connecter depuis le fichier / !'}),
+                res.redirect('/mytodo');
+            }
+        } else {
+            next();
         }
-        res.redirect('/todo');
     })
 
-    .get('/todo/supprimer/:id', urlencodedParser, function(req,res){
+    .get('/mytodo', function(req, res){
+        if(socket.pseudo != 'undefined'){
+            res.redirect('/mytodo/'+socket.pseudo);
+        } else {
+            req.session.clients = clients;
+            res.render('mytodo.ejs', {todolist: req.session.todolist, nombreClientEnLigne: nombreClientEnLigne, clients: req.session.clients}); 
+        }
+    })
+
+    .get('/', function(req, res){
+        res.render('../index.ejs', {message: 'bonjour'});
+    })
+
+    .post('/mytodo/ajouter', urlencodedParser, function(req, res){
+        if(req.params.id != ''){
+            if(req.session.todolist.indexOf(req.body.newtodo) == -1){
+                req.session.todolist.push(req.body.newtodo);
+                socket.broadcast.emit('reload');
+            } else {
+                socket.emit('erreur', {message: 'La tâche '+req.body.newtodo+' existe déjâ !'});
+            }
+        }
+        res.redirect('/mytodo');
+    })
+
+    .get('/mytodo/supprimer/:id', urlencodedParser, function(req, res){
         if(req.params.id != ''){
             req.session.todolist.splice(req.params.id, 1);
+            socket.broadcast.emit('reload');
         }
-        res.redirect('/todo');
+        res.redirect('/mytodo');
     })
 
     /* On redirige vers la todolist si la page demandée n'est pas trouvée */
@@ -58,43 +97,35 @@ io.sockets.on('connection', function (socket, pseudo) {
 
 // Ecoute
     // Dès qu'on nous donne un pseudo, on le stocke en variable de session et on informe les autres personnes
-    socket.on('nouveau_client', function(pseudo) {
-        nombreClientEnLigne++;
-        pseudo = ent.encode(pseudo);
-        socket.pseudo = pseudo;
-        socket.idClient = nombreClientEnLigne;
-        socket.broadcast.emit('nouveau_client', {pseudo: socket.pseudo, idClient: socket.idClient});
-        clients.push(pseudo);
-        
-        console.log(pseudo + " is connected");
-        console.log('customers online: '+nombreClientEnLigne);
-        console.log(clients);
-    });
+    socket.on('nouveau_client', function(pseudo, fn) {
+        if(pseudo != 'undefined'){
+            if(clients.indexOf(pseudo) == -1){
+                pseudo = ent.encode(pseudo);
+                clients.push(pseudo);
+                socket.broadcast.emit('reload');
+                fn(pseudo);
 
-    // Dès qu'on reçoit une tache, on récupère le pseudo de son auteur et on le transmet aux autres personnes
-    socket.on('addTache', function (idTache, newtodo) {
-        idTache = ent.encode(idTache);
-        newtodo = ent.encode(newtodo);
-        //req.session.todolist.push(req.body.newtodo);
-        socket.broadcast.emit('addTache', {idTache: socket.idTache, newtodo: socket.newtodo});
-    });
+            } else {
+                socket.emit('erreur', {message: 'L\'utilisateur '+pseudo+' est déjâ connecté'});
+            }
+        } else {
+            socket.emit('erreur', {message: 'Vous avez entré un pseudo invalide !'});
+        }
+    })
 
+/*    .on('verifier_page_client', function(pseudo, fn){
 
-    socket.on('deleteTache', function (idTache) {
-        //req.session.todolist.splice(req.params.id, 1);
-        socket.broadcast.emit('deleteTache', socket.idTache);
-    });
+    })*/
 
-    // gestion des gens qui quittent le chat
-    socket.on('leaveApp', function(pseudo){
+    // gestion des gens qui quittent l'application
+    .on('leaveApp', function(pseudo){
         pseudo = ent.encode(pseudo);   
-        socket.broadcast.emit('leave', pseudo);
-        nombreClientEnLigne--;
-        clients.splice(pseudo, 1);
+        socket.broadcast.emit('reload');
 
+        clients.splice(pseudo, 1);
         console.log(pseudo + ' is disconnected');
     });
 
+console.log(clients);
 });
-//console.log(session.todolist);
 server.listen(8080);   

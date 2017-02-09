@@ -1,29 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Bienvenue</title>
+	<title>mytodo</title>
 </head>
 <body>
-	<h3>Bienvenue</h3>
+	<h2>Bienvenue </h2>
 
-
-	<p>Accèdez à l'application <a id="scriptOpenWindow">mytodo</a> !</p>
-
-	Assurez-vous d'avoir :
+	<p>Assurez-vous d'avoir installé npm dans le repertoire mytodo et d'avoir exécuté le fichier app.js</p>
+	<p>Une fois sur la page de l'application essayer :</p>
 	<ul>
-		<li> installé npm dans le repertoire mytodo</li>
-		<li></li>
+		<li>d'ajouter une première tâche</li>
+		<li>d'ouvrir une autre page côte à côte</li>
+		<li>d'ajouter une deuxième tâche</li>
+		<li>de supprimer une tâche</li>
 	</ul>
+	<br/>
+	<p>Accédez à l'application en cliquant sur le bouton : <button id="scriptOpenWindow">mytodo</button></p>
+	<p>Vous pouvez aussi entrer l'url suivant : localhost:8080/mytodo mais le serveur n'aura pas accès à votre pseudo</p>
+	<p>N'hésitez pas à me faire parvenir votre savoir :)</p>
 
+
+
+
+    <script src="/socket.io/socket.io.js"></script>
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script type="text/javascript">
-        var pseudo = prompt('Quel est votre pseudo ?');
-        socket.emit('nouveau_client', pseudo);
-        document.title = pseudo + ' - ' + document.title;
-
-		$('#scriptOpenWindow').click(function(){
-			window.open('/todo');
+		var socket = io.connect('http://localhost:8080');
+		var pseudo = prompt('Quel est votre pseudo ?');
+		socket.emit('nouveau_client', pseudo, function(data){
+			console.log(data);
+			document.pseudo = data; // on stock le pseudo sur la page
+			$('h2').append(data);
 		});
+		
+	// Ecotue -------------------------------------------------------------------------------
+		socket.on('connect', function(data){
+			socket.send();
+			
+		});
+
+		socket.on('erreur', function(data){
+			alert(data.message);
+		});
+
+
+	// Emission -----------------------------------------------------------------------------
+        $('#scriptOpenWindow').click(function(){
+			windowsApp(document.pseudo);
+        });
+
+
+
+		function windowsApp(pseudo){
+			window.open('/mytodo/'+pseudo);
+		};
 
 	</script>
 </body>

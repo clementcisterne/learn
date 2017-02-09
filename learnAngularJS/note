@@ -1,0 +1,145 @@
+AngularJS
+
+	
+// Partie 1 : Introduction
+
+	Conclusion
+
+		- NPM est un gestionnaire de paquets qui pertmet de gérer les dépendances côté serveur.
+		  Le fichier package.json permet de décrire les dépendances de l'application.
+		  L'ensemble des dépendances sont installées dans le répertoire note_modules.
+
+		- Bower est un gestionnaire de paquets qui vous permet de gérer vos dépendances côté client.
+		  Le fichier bower.json permet de décrire les dépendances. 
+		  C'est dépendances sont installées dans le répertoire bower_components.
+
+		- Grunt est un "task Runner" utilisé pour automosatiser les tâches comme le build, le test et le lancement de votre application.
+		  Grunt fonctionne en collaboration avec karma afin de lancer automatiquement les test.
+
+		- Teoman permet de créer la structure de votre application et fonctione en collaboration avec Bower et Grunt.
+		  N'oubliez pr d'installer les générateurs en relation avec le type d'application que vous souhaitrez développer.
+		  Il en existe beaucoup. Voici une image qui pourreé-vous aider dans votre recherche : http://yeoman.io/generators/
+
+
+// Partie 2 le concept en détail
+	
+	1. le modèle MVC
+		
+		Un peu de code html :
+			<!doctype html>
+			<html>
+			    <head>
+			        <title></title>
+			    </head>
+			    <body>
+			        <section ng-controller="headerCtrl">
+			            <h1>HEADER</h1>
+			        </section>
+			        <section ng-controller="menuCtrl">
+			            <h1>MENU</h1>
+			        </section>
+			        <section ng-controller="contentCtrl">
+			            <h1>CONTENT</h1>
+			        </section>
+			        <section ng-controller="footerCtrl">
+			            <h1>FOOTER</h1>
+			        </section>
+			    </body>
+			</html>
+
+
+		Et voici le code javacript associé :
+
+			var app = angular.module("app", []);
+
+			app.controller("headerCtrl", function($scope){
+			    //...    
+			});
+
+			app.controller("footerCtrl", function($scope){
+			    //...    
+			});
+
+			app.controller("menuCtrl", function($scope){
+			    //...    
+			});
+
+			app.controller("contentCtrl", function($scope){
+			    //...    
+			});
+
+
+	2. La notion de data-binding
+		
+		Il s'agit d'un moyen de lier la partie vue à la partie logique. 
+		En d'autres termes, grâce à cela, les éléments de votre code HTML seront liés à votre contrôleur JavaScrip 
+
+		Voir des exemples : 
+			- http://jsfiddle.net/6nwL3r1t/6/
+			- http://jsfiddle.net/7sh8a9oz/
+
+
+		Conclusion
+			
+			Prenez conscience que le data-binding est un concept clé de ce framework. 
+			Vous verrez sa puissance au fur et a mesure de son utilisation. 
+			Le plus c'est de changer sa façon de penser.
+			Ne plus agir directement avec le DOM est quelquechose de compliqué à assimiler.
+			Le data-binding est un peu ce que sont les pointeurs pour le langage C
+			Ils sont partout et il est important de les comprendre avec de poursuivre.
+			
+			AngularJS pratique ce que l'on appelle le "two-way data binding". 
+			En d'autres termes, il s'agit d'un data-binding bidirectionnel. 
+			Ainsi, grâce à cette technique, lorsque vous ferez des actions sur votre page HTML, 
+			les variables dans votre JavaScript se mettront à jour et vice-versa : 
+			lorsque vous changerez vos variables dans votre JavaScript, les répercussions sur la vue seront immédiates.
+
+
+	3. L'injection de dépendances 
+
+		Au même titre que le data-binding, l'injection de dépendances est un concept cél lorsque vous développez avec AngularJS.
+		Angular n'est pas le seul framework à utiliser ce système, c'est le cas de Synmphony2.
+
+		Dans la théorie, l'injection de dépendances permet à des modules de ne pas se soucier de l'instanciation des modules dont ils dépendent. Il suffit d'appeler les dépendances et Angular se charge de les instancier et de les injecter pour nous.
+
+
+		- L'exemple de $scope
+
+			Angular possède nativement un certain nnombre de modules comme $scope, $location ..
+			Ces modules sont tous précédé par un $, c'est une convention pour dire qu'il s'agit de module natifs à Angular.
+			Nous verrons qu'il est possible de développer nos propres modules, et il sera déconseillé de suivre la même convention.
+
+		- A quoi ça sert ?
+
+			- La simplicité: vous n'avez plus à vous soucier de l'instanciation des modules. 
+			  Cela suit le principre de "least knowledge": lorsque que vous développez, vous n'avez pas envie de vous soucier des autres composants, mais jsute les utiliser.
+
+			- la fiabilité: Lorsque votre module est chargé, vous avez la certitude que toutes ses dépendances sont chargées et que
+			  vous avez la possibilité de les utiliser.
+
+			- la réutilisabilité: Nous verrons lorsque nous aborderons la partie des services, mais il s'agit d'un point important.
+			  Lorque vous développez des services permetta
+			  nt par exemple de faire des conversions de dates, il y a fort à parier que vous souhaireriez pouvoir réutiliser ce module dans d'autre projets.
+			  L'injection de dépendances permet donc d'inciter les dévelppeurs à créer de petits modules unitaires et à les assembler par la suite pour créer des systemes plus conséquent.	
+
+			- Les tests: C'est un point extrèmement important. Si le module que vous souhaitez tester possède 10 dépendances, il est
+			  assez embetant d'avoir à instancier les 10 modules afin de pourvoir juste tester notre module.
+			  A la place, nous allons dire au systeme d'utiliser des mocks (des bouchons) qui vont se comporter comme nos dépendances.
+
+
+		- Pour finir
+		
+			L'injection de dépendances constitue un patron de conception assez complexe. Je vous incite à vous docuemneter sur le concept. Voici un lien intéressant : http://www.martinfowler.com/articles/injection.html
+
+
+			Je veux juste que vous sachiez que Angular exploite largement ce concept. Il n'est pas nécessaire de comprendre précisément le fonctionnement du service d'injection de dépendances, mais sachez que cela existe et que les commodités offertes par le framework ne sont pas magiques.
+
+
+	4. $scope et $watch
+
+		Nous avons étudié le data-binding et l'injection de dépendances. désormais, nous possèdons toutes les billes pour rentrer dans les méandres d'Angular. Je vous propose d'étudier l'utilité d'une dépendance très importante : $scope
+
+		- $scope
+
+
+
