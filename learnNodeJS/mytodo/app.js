@@ -7,74 +7,67 @@ var app = require('express')(),
 var session = require('cookie-session'); // Charge le middleware de sessions
 var bodyParser = require('body-parser'); // Charge le middleware de gestion des paramètres
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
+var port = process.env.PORT || 8080; 
 
-var nombreClientEnLigne = 0;
-var clients = ['lamouche'];
+var nombreClientEnLigne = 1;
+var clients = ['lamouche']; // le client de base "lamouche"
 
 
+app.use(session({secret: 'todotopsecret'}))
 
 // Gestion de la connexion
-io.sockets.on('connection', function (socket) {
-    
+.use(function(req, res, next){
+    if (typeof(req.session.todolist) == 'undefined') { // Si il n'y a aucune liste de tache on en crée une vide
+        req.session.todolist = [];
+    } 
+    else if(typeof(req.session.clients) == 'undefined') {
+        req.session.clients = clients;
+    } 
+    next();
+})
 
-/*if(socket.pseudo != 'undefined'){
-    console.log('undefined connection');
-} else {
-    console.log('authentificated connection');
-}*/
-    
-    
-    /* On utilise les sessions */
-    app.use(session({secret: 'todotopsecret'}))
+.get('/', function(req, res){
+    res.render('index.ejs');
+})
 
-// Gestion des routes
-    // Si il n'y a aucune liste de tache on en crée une vide
-    .use(function(req, res, next){
-        if (typeof(req.session.todolist) == 'undefined') {
-            req.session.todolist = [];
-        } else if(typeof(req.session.clients) == 'undefined') {
-            req.session.clients = [];
-        } 
-        next();
-    })
+// Gestion des sockets
+io.sockets.on('connection', function (socket,pseudo) {
+   
+// Gestion des routes   
 
-
-    .get('/mytodo/:pseudo', function(req, res, next){
+    // Connexion à l'application mytodo
+    app.get('/mytodo/:pseudo', function(req, res, next){
         if(req.params.pseudo != ''){
-            if(clients.indexOf(req.params.pseudo) != -1){
+            if(clients.indexOf(req.params.pseudo) != -1){ // Si le pseudo n'existe pas
                 req.session.clients = clients;
                 res.render('mytodo.ejs', {todolist: req.session.todolist, nombreClientEnLigne: nombreClientEnLigne, pseudo: req.params.pseudo, clients: req.session.clients});
-            
+
                 console.log(req.params.pseudo + " is connected");
                 console.log('customers online: '+clients.length);
-                console.log(clients);
             } else {
-                socket.emit('erreur', {message: 'Vous devez vous connecter depuis le fichier / !'}),
-                res.redirect('/mytodo');
+                socket.emit('erreur', {message: req.params.pseudo+' n\'existe pas sur le serveur ...\nVous devez vous identifier depuis le fichier root !'});
+                //res.redirect('/');
             }
         } else {
-            next();
+            next(); 
         }
     })
 
     .get('/mytodo', function(req, res){
-        if(socket.pseudo != 'undefined'){
-            res.redirect('/mytodo/'+socket.pseudo);
-        } else {
-            req.session.clients = clients;
-            res.render('mytodo.ejs', {todolist: req.session.todolist, nombreClientEnLigne: nombreClientEnLigne, clients: req.session.clients}); 
-        }
+        req.session.clients = clients;
+        res.render('mytodo.ejs', {todolist: req.session.todolist, nombreClientEnLigne: nombreClientEnLigne, clients: req.session.clients}); 
+        
+    })  
+
+    .get('/', function(req, res){   
+        res.render('index.ejs');
     })
 
-    .get('/', function(req, res){
-        res.render('../index.ejs', {message: 'bonjour'});
-    })
-
-    .post('/mytodo/ajouter', urlencodedParser, function(req, res){
+    .post('/mytodo/ajouter/', urlencodedParser, function(req, res){
         if(req.params.id != ''){
             if(req.session.todolist.indexOf(req.body.newtodo) == -1){
                 req.session.todolist.push(req.body.newtodo);
-                socket.broadcast.emit('reload');
+                socket.broadcast.emit('reload', {message: 'page reload'});
             } else {
                 socket.emit('erreur', {message: 'La tâche '+req.body.newtodo+' existe déjâ !'});
             }
@@ -82,7 +75,7 @@ io.sockets.on('connection', function (socket) {
         res.redirect('/mytodo');
     })
 
-    .get('/mytodo/supprimer/:id', urlencodedParser, function(req, res){
+    .get('/mytodo/supprimer/:id', function(req, res){
         if(req.params.id != ''){
             req.session.todolist.splice(req.params.id, 1);
             socket.broadcast.emit('reload');
@@ -95,16 +88,17 @@ io.sockets.on('connection', function (socket) {
         res.redirect('/');
     });
 
+
 // Ecoute
+
     // Dès qu'on nous donne un pseudo, on le stocke en variable de session et on informe les autres personnes
     socket.on('nouveau_client', function(pseudo, fn) {
-        if(pseudo != 'undefined'){
+        if(pseudo != ''){
             if(clients.indexOf(pseudo) == -1){
-                pseudo = ent.encode(pseudo);
-                clients.push(pseudo);
-                socket.broadcast.emit('reload');
-                fn(pseudo);
-
+                if(pseudo != null){
+                    clients.push(pseudo);
+                    socket.broadcast.emit('reload');
+                }
             } else {
                 socket.emit('erreur', {message: 'L\'utilisateur '+pseudo+' est déjâ connecté'});
             }
@@ -113,19 +107,20 @@ io.sockets.on('connection', function (socket) {
         }
     })
 
-/*    .on('verifier_page_client', function(pseudo, fn){
-
-    })*/
-
-    // gestion des gens qui quittent l'application
-    .on('leaveApp', function(pseudo){
-        pseudo = ent.encode(pseudo);   
+    // Gestion des gens qui quittent l'application
+    socket.on('leaveApp', function(pseudo){
+        id = 0;
+        while( pseudo != clients[id] ){
+            id++;
+        }
+        console.log('id client disconnected : '+id);
+        clients.splice(id, 1);
         socket.broadcast.emit('reload');
-
-        clients.splice(pseudo, 1);
         console.log(pseudo + ' is disconnected');
     });
 
 console.log(clients);
+console.log("Server solicited.");
+console.log('');
 });
-server.listen(8080);   
+server.listen(port);   

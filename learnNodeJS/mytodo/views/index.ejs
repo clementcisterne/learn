@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>mytodo</title>
+	<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu:regular,bold&subset=Latin">
+	<style type="text/css">
+        body { font-family: Ubuntu; text-decoration: none; color: black;}
+	</style>
+</head>
+<body>
+	<h2>Bienvenue </h2>
+	<button id="scriptOpenWindow">mytodo</button>
+
+	<p>Assurez-vous d'avoir installé <b>npm</b> dans le repertoire mytodo et d'avoir exécuté le fichier app.js</p>
+	<p>Suivez ces instructions: </p>
+	<ul>
+		<li>Cliquez 2 fois sur le bouton <b>mytodo</b> pour ouvrir 2 fenêtres</li>
+		<li>Essayez d'ajouter une première tâche, puis une seconde ...</li>
+		<li>Essayez de supprimer quelques tâches</li>
+		<li>Vous pouvez aussi essayer de connecter plusieurs clients et de les déconnecter</li>
+	</ul>
+
+	<p>Cette application gère aussi l'arrivée et la sortie des nouveaux clients, mais elle n'est pas encore au point. <br>
+	Si vous avez renseigné un pseudo, lorsque vous cliquez sur <b>mytodo</b>, le serveur pourra vous reconnaitre à partir de la page, pour vous déconnecter cliquez sur <b>déconnexion</b>. <br>
+	Si vous ne trouvez pas le bouton <b>mytodo</b>, ou que vous ne voulez pas le voir, ou simplement que vous ne voulez pas cliquer dessus parqu'il vous fait peur ... entrez l'URL suivant et tout ira bien : <b>localhost:8080/mytodo</b> <br>
+	N'hésitez pas à me faire parvenir votre savoir :)</p>
+
+    <script src="/socket.io/socket.io.js"></script>
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script type="text/javascript">
+		var socket = io.connect('http://localhost:8080');
+
+		// Gestion des nouveaux clients
+		if($('#pseudo').text() == ''){
+			var pseudo = prompt('Quel est votre pseudo ?');
+/*			socket.emit('nouveau_client', pseudo, function(data){
+				$('h2').append(pseudo);
+			});*/
+		} else {
+			var pseudo = $('#pseudo').text();
+		}
+		$('h2').append(pseudo)
+
+	// Ecoute -------------------------------------------------------------------------------
+		socket.on('login', function(){
+			login();
+		});
+
+		socket.on('erreur', function(data){
+			alert(data.message);
+			redirect('/');
+		});
+
+
+	// Emission -----------------------------------------------------------------------------
+        $('#scriptOpenWindow').click(function(){
+        	socket.emit('nouveau_client', pseudo);
+			windowsApp(pseudo);
+        });
+
+
+
+        function login(){
+			if($('#pseudo').text() == ''){
+				var pseudo = prompt('Quel est votre pseudo ?');
+				socket.emit('nouveau_client', pseudo, function(data){
+					$('h2').append(pseudo);
+				});
+			} else {
+				var pseudo = $('#pseudo').text();
+			}
+        }
+
+
+		function windowsApp(pseudo){
+			if(pseudo != 'undefined'){
+				var application = window.open('/mytodo/'+pseudo);
+			} else {
+				var application = window.open('/mytodo');
+			}
+			if(application.closed){
+				console.log('toto');
+			}
+		};
+
+
+
+	</script>
+
+	<!-- Nous allons stocker le pseudo pour vérifier si le client à déjâ renseigné un pseudo -->
+	<div id="pseudo" hidden="true"></div>
+</body>
+</html>

@@ -161,4 +161,93 @@ AngularJS
 				});
 
 
-			Comme vous pouvez le constater, $scope constitue
+			Comme vous pouvez le constater, $scope constitue une dépendance de notre controller. Il s'agit du mécanisme couramment utilisé par Angular afin d'exposer le modèle à la vue.
+			En d'autres termes, le data-biding se fait grâce à l'objet $scope.
+
+			Toute donnée qui n'est pas attachée à $scope n'appartient pas au modèle et ne peut donc pass être exposée à la vue !
+
+			Voyez vraiment ce $scope comme le contexte courant dans lequel vous pouvez agir. Chaque contrôleur possèdera son propre objet $scope et donc son propre contexte.
+
+			Il est parfois nécessaire d'accéder à d'autres contexte que le sien. En effet, lorsque vous êtes dans vôtre contrôleur, il est possible que vous ayes besoin d'accéder au contexte d'un autre contrôleur.
+			Si tel est le cas, Angular possède l'objet $rootScope qui permet d'accèder à l'ensemble des contextes présents dans votre page.
+
+
+			- $watch
+
+				Il est souvent intéressant d'observer les changements de notre modèle.
+
+				Prenons l'example suivant. Admettons que nous souhaitions développer un module de reservation. Lorsqe ma facture est supérieur à 100€, je souhaite appliquer une promotion de 10%. 
+
+
+				Voici un exemple :
+
+				app.controller("BillCtrl", function($scope){
+				    $scope.articles = [{"name": "Téléphone sans-fil", "quantity": 1, "price": "29.99"}, {"name": "Chargeur iPhone5", "quantity": 1, "price": "29.99"}];
+				    $scope.total = function(){
+				        var total = 0;
+				        for(var i = 0; i < $scope.articles.length; i++){
+				            total += $scope.articles[i].price * $scope.articles[i].quantity;
+				        }
+				        return total;
+				    };
+				    function calculateDiscount(newValue, oldValue, scope){
+				        $scope.discount = (newValue > 100) ? newValue * 0.10 : 0;
+				    };
+				    
+				    $scope.finalTotal = function(){
+				        return $scope.total() - $scope.discount;   
+				    };
+				    
+				    $scope.$watch($scope.total, calculateDiscount);
+				});
+
+				Remarquez l'utilisation de $watch. Il s'agit d'une fonction attachée à $scope qui va nous permettre d'observer certaines propriétés de votre modèle et de déclencher des opérations lorsque la valeur de ces propriétés changent.
+
+				La spécification de la fonction est la suivante :
+
+					$watch(watchFn, watchAction, deepWatch)
+
+				Analysons les paramètres:
+
+					- watchFN: la propriété de votre modèle que vous souhaitez observer. Ce paramètre peut-être soit une fonction, soit une expression.
+
+					- watchAction: fonction ou expression qui sera appelée lorsque watchFn change.
+
+					- deepWatch: ce paramètre est optionnel. Il s'agit d'un booléen qui lorsqu'il est vrai indique à Angular qu'il doit déclencher watchAction lorsque les sous-propriétés d'un objet changent. Ce paramètre est pratique lorsque vous souhaitez examiner l'ensemble des propriétés d'un tableau ou d'un objet.
+
+				L'utilisation de $watch esttrès puissante et je vous encourage vivement à l'utiliser, mais attention aux performance qui peuvent parfois se dégrader. Dans la partie 4 de ce cours, je vous propose l'utilisation d'une extension Chrome qui vous permettre de debugger efficacement cotre code Angular. LEs questions de perfommance seront au RDV.
+
+
+
+
+	5. Les directives
+
+		Le code HTML que nou avons écrit est peuplé d'attributs comme ng-controller, ng-repeat, ng-app, ng-model
+		Ce sont des directives, qui sont utilisé lorsque l'on souhaite modifer ou transfomer le DOM
+
+		Il en existe plusieurs :
+
+			- ngController: directive permettant d'attacher un controller à la vue
+			- ngRepeat: directive permettant de répéter un template pour chaque élément d'une collection
+			- ngModel: directive permettant de lier les input, textarea ou select à une propriété du contexte actuel
+
+			ng-app est une directive très importante, c'est elle qui permet d'initialiser l'application.
+			Placez la au niveau cd votre balise body ou html, et passez-lui le nom de l'application.
+			Dabs cet exemple, on crée un module myApp. Tous les modules (controleus, services, directive) seront obligatoirement rattachés à ce module.
+
+				<html>
+				    <head>        
+				    </head>
+				    <body ng-app="myApp">
+				        
+				    </body>
+				</html>
+
+
+		- Créer une directive
+
+			Il arrive souvent que l'on ai besoin de créer ces propres directives. PAr exemple lorsque l'on veut faire patienter l'utilisateur il peut être pertinent d'afficher un cursuer de chargement, il faudra une directive.
+
+			Le nommage :
+
+				la convention est : namespace

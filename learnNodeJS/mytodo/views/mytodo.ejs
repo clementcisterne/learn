@@ -4,48 +4,53 @@
 <head>
     <title>mytodo</title>
     <style>
-        a {text-decoration: none; color: black;}
+        body { font-family: Ubuntu; text-decoration: none; color: black;}
+        a:hover {  text-decoration: none; color: black; }
     </style>
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu:regular,bold&subset=Latin">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 </head>
-
-<body>
-
-    <h1>Bienvenue sur mytodo </h1>
-
-
-    <h2>Gérer vos tâches <button id="leaveApp">Déconnexion</button></h2>
-
-    <div>
-        
-        <form style="display: inline-block;" action="/mytodo/ajouter" method="post" id="formTache">
-            <p>
-                <input type="text" name="newtodo" id="newtodo" placeholder="Ajoutez une tâche" autofocus />
-                <input type="submit" value="Add" />
-            </p>
-        </form>
-        <button class="btnViderLesTaches">vider</button>
-        <a href="Javascript:window.location.reload();">recharger</a>
-        
-    </div>
-
-    <ul id="zoneTache">
-    <% todolist.forEach(function(todo, index) { %>
-        <li id="<%= index %>" class="tache"><a href="/mytodo/supprimer/<%= index %>">✘</a>  <%= todo %></li>
-    <% }); %>
-    </ul>
-
     
+<body unonload="leave()">
 
+    <div class="col-lg-offset-4 col-lg-4">
+        <div class="" style="margin-left: 15%; margin-right: 15 %;">
+            <!-- Nous allons stocker le pseudo pour vérifier si le client à déjâ renseigné un pseudo -->
+            <div class="pseudo" hidden="true"></div>
+            <h1 class="text-center">mytodo </h1>
+            <button id="leaveApp" class="text-center">Déconnexion</button>
+            <h2>Gérer vos tâches </h2>
+            <div>
+                <form style="display: inline-block;" action="/mytodo/ajouter/" method="post" id="formTache">
+                    <p>
+                        <input type="text" name="newtodo" id="newtodo" placeholder="Ajoutez une tâche" autofocus />
+                        <input type="submit" value="Add" />
+                    </p>
+                </form>
+                <button class="btnViderLesTaches">vider</button>
+                <!-- <a href="Javascript:window.location.reload();">recharger</a> -->
+                
+            </div>
 
-    <div>
-        <h4> Clients en ligne <%= clients.length; %></h4>
-        <ul id="zoneInfoClients">
-            <% clients.forEach(function(pseudo, index) { %>
-                <li><%= pseudo %></li>
+            <ul id="zoneTache" class="">
+            <% todolist.forEach(function(todo, index) { %>
+                <li class="deleteTache" name="<%= todo %>"><a href="/mytodo/supprimer/<%= index %>">✘</a>  <%= todo %></li>
             <% }); %>
-        </ul>   
+            </ul>
+
+
+            <div>
+                <h4> Clients en ligne <%= clients.length; %></h4>
+                <ul id="zoneInfoClients">
+                    <% clients.forEach(function(pseudo, index) { %>
+                        <li id='<%= pseudo %>' value="<%= index %>"><%= pseudo %></li>
+                    <% }); %>
+                </ul>   
+            </div>
+        </div>
     </div>
 
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script> 
     <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript">
@@ -53,75 +58,72 @@
         // Connexion
         var socket = io.connect('http://localhost:8080');
 
-
-        if(pseudo == 'undifined'){
-        }
         var pseudo = window.location.href.substring(window.location.href.lastIndexOf( "/" )+1);
-        $('h1').append(pseudo);
+        if(pseudo == 'mytodo'){
+            pseudo = '';
+        } 
+
+        //$('h1').append(pseudo);
+        $('div.pseudo').append(pseudo);
         document.title = pseudo + ' - ' + document.title;
 
 
     // écoute --------------------------------------------------------------------    
+
         // On reload la page quand un utilisateur se connecte, se deconnecte, ajoute ou supprime une tache
-        socket.on('reload', function(){
-            reload(pseudo);
+        socket.on('reload', function(message){
+            reload();
         });
 
+        socket.on('connect', function(pseudo){
+            socket.emit('nouveau_client', pseudo);
+        });
+
+        // On affiche un message d'erreur   
         socket.on('erreur', function(message){
             alert(message);
         });
 
 
     // emission ------------------------------------------------------------------
-        // Ajout d'une tache
-        $('#formTache').submit(function(){
-            socket.emit('addTache', pseudo);
-        });
-
-        // Suppression d'une tache
-        $('.deleteTache').click(function(){
-            var idtache = this.parentNode.id;
-            var nomtache = this.parentNode.html;
-            var confirm = confirm('Voulez vous vraiment supprimer la tâche '+ idtache +' ?');
-            if(confirm){
-                socket.emit('deleteTache', pseudo);
-                redirect('/mytodo/supprimer/'+nomtache);
-            } else {
-                reload();
-            }
-        });
-
-        // Vides la todolist
-        $('.btnViderLesTaches').click(function(){
-            
-        });
 
         // Quitter l'application
         $('#leaveApp').click(function(pseudo){
-            confirm('Voulez vous vraiment quitter mytodo ? :\'(');
-            socket.emit('leaveApp', pseudo);  
-            fermer();
+            var pseudo = window.location.href.substring(window.location.href.lastIndexOf( "/" )+1);
+            if(pseudo != 'undefined'){
+                if(pseudo != 'mytodo'){
+                    if(confirm('Voulez vous vraiment quitter l\'application mytodo '+pseudo+' ? :\'(') == true){
+                        leave(); 
+                        window.close();
+                    }
+                } else {
+                    if(confirm('Voulez vous vraiment quitter mytodo ? :\'(') == true){
+                        window.close();
+                    }
+                }
+            }
         });
 
-
+        //$(document).unload(leave());
 
     // some functions 
-        function viderLesTaches(){
-            //$('#zoneTache').empty();
-        }
-
-        function fermer(){
+        function closeApp(){
             window.close();
         } 
 
-        function reload(pseudo){
-            redirect('/mytodo/'+pseudo);
+        function reload(){
+            window.location.reload();
         }
 
-
-
-
-
+        function leave(){
+            pseudo = $('div.pseudo')[0].innerHTML;
+            if(pseudo != ''){
+                socket.emit('leaveApp', pseudo); 
+            } else {
+                alert('pseudo inconnue');
+                closeApp();
+            }
+        }
     </script>
 </body>
 </html>
